@@ -6,7 +6,7 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <nav className="bg-black shadow-md fixed top-0 left-0">
+    <nav className="bg-gray-900 shadow-md fixed top-0 left-0">
       <div className="w-screen mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Logo */}
@@ -25,7 +25,7 @@ const Navbar = () => {
             <a href="/" className="text-purple-600 hover:text-orange-500">Home</a>
             <a href="/questions" className="text-purple-600 hover:text-orange-500">Questions</a>
             <a href="/sorting-visualizer" className="text-purple-600 hover:text-orange-500">Sorting Visualizer</a>
-            <a href="/dsagames" className="text-purple-600 hover:text-orange-500">Games</a>
+            {/* <a href="/dsagames" className="text-purple-600 hover:text-orange-500">Games</a> */}
           </div>
           {/* Mobile menu button */}
           <div className="flex items-center md:hidden">
@@ -62,7 +62,7 @@ const Navbar = () => {
             <a href="/" className="block text-purple-600 hover:text-orange-500 px-3 py-2 rounded-md text-base font-medium">Home</a>
             <a href="/questions" className="block text-purple-600 hover:text-orange-500 px-3 py-2 rounded-md text-base font-medium">Questions</a>
             <a href="/sorting-visualizer" className="block text-purple-600 hover:text-orange-500 px-3 py-2 rounded-md text-base font-medium">Sorting Visualizer</a>
-            <a href="/dsagames" className="block text-purple-600 hover:text-orange-500 px-3 py-2 rounded-md text-base font-medium">Games</a>
+            {/* <a href="/dsagames" className="block text-purple-600 hover:text-orange-500 px-3 py-2 rounded-md text-base font-medium">Games</a> */}
           </div>
         </div>
       )}

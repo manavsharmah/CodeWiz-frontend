@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Navbar from "../components/Navbar";
-import Sidebar from "../components/Sidebar";
+// import Sidebar from "../components/Sidebar";
 
 const dsagame = () => {
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
@@ -22,13 +22,13 @@ const dsagame = () => {
       {/* Main layout container */}
       <div className="flex">
         {/* Sidebar */}
-        <Sidebar items={items} onItemClick={handleItemClick} />
+        {/* <Sidebar items={items} onItemClick={handleItemClick} /> */}
 
         {/* Main Content */}
         <div className="flex-1 bg-black h-auto w-auto">
           <div>
             <iframe
-              src="/games/TwoSum/index.html"
+              src="/games/1/index.html"
               width="100%"
               height="1000px" // Adjust the height based on your game size
               frameBorder="0"
@@ -36,7 +36,7 @@ const dsagame = () => {
               allowFullScreen
             ></iframe>
             <iframe
-              src="/games/2D Matrix Game/index.html"
+              src="/games/2D Matrix/index.html"
               width="100%"
               height="1000px" // Adjust the height based on your game size
               frameBorder="0"
@@ -44,7 +44,7 @@ const dsagame = () => {
               allowFullScreen
             ></iframe>
             <iframe
-              src="/games/Peak Element/index.html"
+              src="/games/Peak Element Finder/index.html"
               width="100%"
               height="1000px" // Adjust the height based on your game size
               frameBorder="0"

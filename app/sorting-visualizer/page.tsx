@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Select } from "../components/Visualizer-input/Select"; 
-import { Slider } from "../components/Visualizer-input/Slider";
+import { Select } from "../components/Visualizer/Select"; 
+import { Slider } from "../components/Visualizer/Slider";
 import Navbar from "../components/Navbar";
-import { CodeViewer } from "../components/CodeViewer";
+import { CodeViewer } from "../components/Visualizer/CodeViewer";
 import { useSortingAlgorithmContext } from "../context/Visualizer";
 import { SortingAlgorithmType } from "@/app/lib/types";
 import {
