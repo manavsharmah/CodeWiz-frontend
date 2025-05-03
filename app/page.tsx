@@ -99,7 +99,7 @@ export default function Home() {
                       </div>
                     ))}
                   </div>
-                  <span>Join 10,000+ developers mastering DSA</span>
+                  <span>Join 1+ developers mastering DSA</span>
                 </div>
               </FadeIn>
             </div>
@@ -429,7 +429,7 @@ export default function Home() {
                           ))}
                         </div>
                         <div className="text-sm text-gray-400">
-                          <span className="text-white font-medium">500+</span> challenges available
+                          <span className="text-white font-medium">4</span> challenges available
                         </div>
                       </div>
                       <div className="text-sm text-gray-400 flex items-center">

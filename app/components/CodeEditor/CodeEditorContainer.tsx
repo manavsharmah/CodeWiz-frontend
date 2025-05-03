@@ -1,45 +1,98 @@
 "use client"
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import LanguageSelector from "./LanguageSelector"
 import CodeEditor from "./CodeEditor"
 import OutputDisplay from "./OutputDisplay"
 import { Button } from "@/components/ui/button"
 import { Play, Loader2 } from "lucide-react"
 
-const CodeEditorContainer: React.FC = () => {
-  const [code, setCode] = useState<string>(`// Write your solution here!
-
-function twoSum(nums, target) {
-  // Your code here
+interface CodeEditorContainerProps {
+  questionId: number
+  starterCode: {
+    javascript?: string
+    python?: string
+    cpp?: string
+  }
 }
-`)
-  const [language, setLanguage] = useState<string>("javascript")
+
+interface TestCase {
+  input: string
+  expected_output: string
+  actual_output: string
+  passed: boolean
+}
+
+interface TestSummary {
+  total_cases: number
+  passed_cases: number
+}
+
+interface TestResults {
+  results: TestCase[]
+  summary: TestSummary
+}
+
+const CodeEditorContainer: React.FC<CodeEditorContainerProps> = ({ questionId, starterCode }) => {
+  const [language, setLanguage] = useState<"javascript" | "python" | "cpp">("javascript")
+  const [code, setCode] = useState<string>("")
   const [output, setOutput] = useState<string>("")
+  const [results, setResults] = useState<TestResults | null>(null)
+  const [error, setError] = useState<string>("")
   const [loading, setLoading] = useState<boolean>(false)
+
+  const getStarterCode = (lang: "javascript" | "python" | "cpp") =>
+    starterCode[lang] || "// No starter code available."
+
+  useEffect(() => {
+    setCode(getStarterCode(language))
+  }, [starterCode, language])
 
   const handleSubmit = async () => {
     setLoading(true)
+    setOutput("")
+    setResults(null)
+    setError("")
+
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/execute_code/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ code, language }),
-      })
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/submit_code/${questionId}/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ code, language }),
+        }
+      )
+
+      const data = await response.json()
 
       if (!response.ok) {
-        throw new Error("Failed to execute code")
+        throw new Error(data.error || "Failed to execute code")
       }
 
-      const data: { output: string } = await response.json()
-      setOutput(data.output || "No output returned")
-    } catch (error: any) {
-      setOutput(`Error: ${error.message}`)
+      if (data.results && data.summary) {
+        setResults(data)
+      } else {
+        setOutput(data.output || JSON.stringify(data, null, 2))
+      }
+    } catch (err: any) {
+      setError(err?.message || "An unexpected error occurred")
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleClear = () => {
+    setOutput("")
+    setResults(null)
+    setError("")
+  }
+
+  const handleLanguageChange = (newLang: "javascript" | "python" | "cpp") => {
+    setLanguage(newLang)
+    setCode(getStarterCode(newLang))
   }
 
   return (
@@ -48,11 +101,13 @@ function twoSum(nums, target) {
         <h2 className="text-xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-[#F09319] to-[#ffb766]">
           Code Editor
         </h2>
-        <LanguageSelector language={language} setLanguage={setLanguage} />
+        <LanguageSelector language={language} setLanguage={handleLanguageChange} />
       </div>
+
       <div className="border border-gray-800 rounded-lg overflow-hidden">
         <CodeEditor language={language} code={code} setCode={setCode} />
       </div>
+
       <div className="mt-4 flex justify-between items-center">
         <Button
           onClick={handleSubmit}
@@ -73,14 +128,19 @@ function twoSum(nums, target) {
         </Button>
         <Button
           variant="outline"
-          onClick={() => setOutput("")}
-          disabled={!output}
+          onClick={handleClear}
+          disabled={!output && !results && !error}
           className="bg-transparent border border-gray-700 text-white hover:bg-gray-800 hover:border-gray-600"
         >
           Clear Output
         </Button>
       </div>
-      <OutputDisplay output={output} />
+
+      <OutputDisplay
+        output={output}
+        results={results || undefined}
+        error={error || undefined}
+      />
     </div>
   )
 }

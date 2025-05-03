@@ -12,14 +12,14 @@ const DsaGamesPage = () => {
 
   const games = [
     { id: "1", name: "Two Sum Adventure", description: "Find pairs of numbers that add up to the target value" },
-    { id: "2D Matrix", name: "2D Matrix Explorer", description: "Navigate through a matrix to find the target" },
+    { id: "2", name: "2D Matrix Explorer", description: "Navigate through a matrix to find the target" },
     {
-      id: "Peak Element Finder",
+      id: "3",
       name: "Peak Element Finder",
       description: "Find peak elements in a mountain array",
     },
     {
-      id: "Remove Duplicates",
+      id: "4",
       name: "Remove Duplicates",
       description: "Clean up arrays by removing duplicate elements",
     },
