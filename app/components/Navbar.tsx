@@ -170,7 +170,7 @@ const Navbar = () => {
                     onMouseLeave={handleMouseLeave}
                   >
                     <div className="bg-gradient-to-b from-gray-900 to-black border border-purple-900/30 backdrop-blur-lg rounded-md shadow-[0_0_15px_rgba(139,93,255,0.3)] p-1">
-                      {["Array", "Linked List", "Hash Table", "Binary Search Tree", "Binary Heap"].map((item) => (
+                      {["Array", "Linked List", "Hash Table", "Binary-Search-Tree", "Binary Heap"].map((item) => (
                         <Link
                           key={item}
                           href={`/data-structure-visualizer/${item.toLowerCase().replace(" ", "-")}`}
@@ -278,7 +278,7 @@ const Navbar = () => {
                       transition={{ duration: 0.2 }}
                       className="ml-4 space-y-1 overflow-hidden"
                     >
-                      {["Array", "Linked List", "Hash Table", "Binary Search Tree", "Binary Heap"].map((item) => (
+                      {["Array", "Linked List", "Hash Table", "Binary-Search-Tree", "Binary Heap"].map((item) => (
                         <Link
                           key={item}
                           href={`/data-structure-visualizer/${item.toLowerCase().replace(" ", "-")}`}

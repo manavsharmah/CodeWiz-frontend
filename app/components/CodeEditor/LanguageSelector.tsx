@@ -26,7 +26,6 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ language, setLangua
           <SelectItem value="javascript">JavaScript</SelectItem>
           <SelectItem value="python">Python</SelectItem>
           <SelectItem value="cpp">C++</SelectItem>
-          <SelectItem value="java">Java</SelectItem>
         </SelectContent>
       </Select>
     </div>

@@ -110,20 +110,20 @@ export default function BinarySearchTreeVisualizer() {
       ctx.arc(node.x, node.y, 20, 0, Math.PI * 2)
       
       if (node.highlighted) {
-        ctx.fillStyle = "hsl(var(--primary))"
+        ctx.fillStyle = "#8B5DFF" 
       } else {
-        ctx.fillStyle = "hsl(var(--muted))"
+        ctx.fillStyle = "#F09319" 
       }
       
       ctx.fill()
       ctx.stroke()
       
-      // Draw value
-      ctx.fillStyle = node.highlighted ? "hsl(var(--primary-foreground))" : "hsl(var(--foreground))"
-      ctx.textAlign = "center"
-      ctx.textBaseline = "middle"
-      ctx.font = "14px sans-serif"
-      ctx.fillText(node.value.toString(), node.x, node.y)
+      // Draw value with fixed high-contrast colors
+      ctx.fillStyle = node.highlighted ? "#ffffff" : "#000"; // Use fixed black/white for maximum contrast
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = "bold 14px sans-serif";
+      ctx.fillText(node.value.toString(), node.x, node.y);
     }
   }, [treeNodes])
 
@@ -361,7 +361,7 @@ export default function BinarySearchTreeVisualizer() {
   }
 
   return (
-    <div className="container mt-10 p-10">
+    <div className="container mt-10 py-10">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Binary Search Tree Visualizer</h1>
         <p className="text-muted-foreground">
@@ -553,24 +553,23 @@ export default function BinarySearchTreeVisualizer() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-            <ul className="space-y-2 text-sm">
+              <ul className="space-y-2 text-sm">
                 <li>
-                    <strong>Binary Property:</strong> Each node has at most two children.
+                  <strong>Binary Property:</strong> Each node has at most two children.
+                </li>
+                <li>\
+                  <strong>Search Property:</strong> Left subtree values {"<"} node value {"<"} right subtree values.
                 </li>
                 <li>
-                    <strong>Search Property:</strong> Left subtree values {"<"} node value {"<"} right subtree values.
+                  <strong>Balanced Trees:</strong> Self-balancing variants like AVL and Red-Black trees maintain O(log n) operations.
                 </li>
                 <li>
-                    <strong>Balanced Trees:</strong> Self-balancing variants like AVL and Red-Black trees maintain O(log n) operations.
+                  <strong>In-order Traversal:</strong> Visits nodes in ascending order of values.
                 </li>
                 <li>
-                    <strong>In-order Traversal:</strong> Visits nodes in ascending order of values.
+                  <strong>Applications:</strong> Used in search applications, priority queues, and for maintaining sorted data.
                 </li>
-                <li>
-                    <strong>Applications:</strong> Used in search applications, priority queues, and for maintaining sorted data.
-                </li>
-            </ul>
-
+              </ul>
             </CardContent>
           </Card>
         </div>
@@ -578,4 +577,3 @@ export default function BinarySearchTreeVisualizer() {
     </div>
   )
 }
-

@@ -25,30 +25,6 @@ const DSAProblemsPage = () => {
         setQuestionData(data)
       } catch (error) {
         console.error("Error fetching question data:", error)
-        // For demo purposes, create mock data if API fails
-        setQuestionData({
-          title: "Two Sum",
-          description:
-            "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice.",
-          examples: [
-            {
-              input: "nums = [2,7,11,15], target = 9",
-              output: "[0,1]",
-              explanation: "Because nums[0] + nums[1] == 9, we return [0, 1].",
-            },
-            {
-              input: "nums = [3,2,4], target = 6",
-              output: "[1,2]",
-              explanation: "Because nums[1] + nums[2] == 6, we return [1, 2].",
-            },
-          ],
-          constraints: [
-            "2 <= nums.length <= 10^4",
-            "-10^9 <= nums[i] <= 10^9",
-            "-10^9 <= target <= 10^9",
-            "Only one valid answer exists.",
-          ],
-        })
       } finally {
         setLoading(false)
       }
@@ -91,7 +67,12 @@ const DSAProblemsPage = () => {
             />
           </div>
           <div className="w-full lg:w-1/2 p-4 lg:p-6 overflow-auto border-t lg:border-t-0 lg:border-l border-gray-800">
-            <CodeEditorContainer />
+          {questionData && (
+            <CodeEditorContainer
+              questionId={parseInt(id as string)}
+              starterCode={questionData.starter_code}
+            />
+          )}
           </div>
         </div>
       </FadeIn>

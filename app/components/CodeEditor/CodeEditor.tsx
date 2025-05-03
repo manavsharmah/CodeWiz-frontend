@@ -20,8 +20,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ language, code, setCode }) => {
         return "cpp"
       case "python":
         return "python"
-      case "java":
-        return "java"
       default:
         return "javascript"
     }

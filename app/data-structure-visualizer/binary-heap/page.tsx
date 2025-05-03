@@ -101,19 +101,19 @@ export default function BinaryHeapVisualizer() {
       ctx.arc(positions[i].x, positions[i].y, nodeRadius, 0, Math.PI * 2)
 
       if (activeIndices.includes(i)) {
-        ctx.fillStyle = "hsl(var(--primary))"
+        ctx.fillStyle = "#8B5DFF"
       } else {
-        ctx.fillStyle = "hsl(var(--muted))"
+        ctx.fillStyle = "#F09319"
       }
 
       ctx.fill()
       ctx.stroke()
 
-      // Draw value
-      ctx.fillStyle = activeIndices.includes(i) ? "hsl(var(--primary-foreground))" : "hsl(var(--foreground))"
+      // Draw value with fixed high-contrast colors
+      ctx.fillStyle = activeIndices.includes(i) ? "#ffffff" : "#000000" // Use fixed black/white for maximum contrast
       ctx.textAlign = "center"
       ctx.textBaseline = "middle"
-      ctx.font = "14px sans-serif"
+      ctx.font = "bold 14px sans-serif"
       ctx.fillText(heap[i].toString(), positions[i].x, positions[i].y)
     }
   }, [heap, activeIndices, canvasSize])
@@ -297,7 +297,7 @@ export default function BinaryHeapVisualizer() {
   }
 
   return (
-    <div className="container mt-10 p-10">
+    <div className="container mt-10 py-10">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Binary Heap Visualizer</h1>
         <p className="text-muted-foreground">
@@ -502,4 +502,3 @@ export default function BinaryHeapVisualizer() {
     </div>
   )
 }
-
