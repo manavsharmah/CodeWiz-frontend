@@ -1,6 +1,7 @@
 "use client"
 import { useState } from "react"
 import type React from "react"
+import { useAuth } from "../../../contexts/AuthContext"
 
 import Link from "next/link"
 import { ArrowRight, Eye, EyeOff, Sparkles } from "lucide-react"
@@ -26,32 +27,17 @@ export default function RegisterPage() {
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
+  const { register } = useAuth()
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-  
+
     try {
-      const res = await fetch("http://localhost:8000/api/auth/register/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          username: formData.username,
-          email: formData.email,
-          password1: formData.password,
-          password2: formData.password,
-        }),
-      })
-  
-      const data = await res.json()
-  
-      if (res.ok) {
-        window.location.href = "/login"
-      } else {
-        alert(Object.values(data)[0])
-      }
+      await register(formData.username, formData.email, formData.password)
+      window.location.href = "/login"
     } catch (err) {
-      alert("Something went wrong")
+      alert((err as Error).message)
     } finally {
       setIsLoading(false)
     }

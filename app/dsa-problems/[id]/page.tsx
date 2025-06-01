@@ -17,7 +17,11 @@ const DSAProblemsPage = () => {
     const fetchQuestionData = async () => {
       try {
         setLoading(true)
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/questions/${id}/`)
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/questions/${id}/`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+          },
+        })
         if (!response.ok) {
           throw new Error("Failed to fetch question data")
         }
@@ -47,6 +51,20 @@ const DSAProblemsPage = () => {
     )
   }
 
+  if (!questionData) {
+    return (
+      <div className="flex flex-col min-h-screen bg-black text-white">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center space-y-4">
+            <p className="text-red-400">Failed to load problem data</p>
+            <p className="text-gray-400">Please try again later</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-black text-white">
       <Navbar />
@@ -60,19 +78,17 @@ const DSAProblemsPage = () => {
 
           <div className="w-full lg:w-1/2 p-4 lg:p-6 overflow-auto">
             <QuestionHolder
-              title={questionData.title}
-              description={questionData.description}
-              examples={questionData.examples}
-              constraints={questionData.constraints}
+              title={questionData.title || 'Untitled Problem'}
+              description={questionData.description || 'No description available'}
+              examples={questionData.examples || []}
+              constraints={questionData.constraints || []}
             />
           </div>
           <div className="w-full lg:w-1/2 p-4 lg:p-6 overflow-auto border-t lg:border-t-0 lg:border-l border-gray-800">
-          {questionData && (
             <CodeEditorContainer
               questionId={parseInt(id as string)}
-              starterCode={questionData.starter_code}
+              starterCode={questionData.starter_code || ''}
             />
-          )}
           </div>
         </div>
       </FadeIn>

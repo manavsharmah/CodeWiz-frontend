@@ -6,6 +6,8 @@ import CodeEditor from "./CodeEditor"
 import OutputDisplay from "./OutputDisplay"
 import { Button } from "@/components/ui/button"
 import { Play, Loader2 } from "lucide-react"
+import { useAuth } from "@/contexts/AuthContext"
+import { useRouter } from "next/navigation"
 
 interface CodeEditorContainerProps {
   questionId: number
@@ -40,6 +42,8 @@ const CodeEditorContainer: React.FC<CodeEditorContainerProps> = ({ questionId, s
   const [results, setResults] = useState<TestResults | null>(null)
   const [error, setError] = useState<string>("")
   const [loading, setLoading] = useState<boolean>(false)
+  const { isAuthenticated, user } = useAuth()
+  const router = useRouter()
 
   const getStarterCode = (lang: "javascript" | "python" | "cpp") =>
     starterCode[lang] || "// No starter code available."
@@ -49,33 +53,73 @@ const CodeEditorContainer: React.FC<CodeEditorContainerProps> = ({ questionId, s
   }, [starterCode, language])
 
   const handleSubmit = async () => {
+    if (!isAuthenticated) {
+      router.push('/login')
+      return
+    }
+
     setLoading(true)
     setOutput("")
     setResults(null)
     setError("")
 
     try {
+      const token = localStorage.getItem('accessToken')
+      if (!token) {
+        throw new Error('No authentication token found')
+      }
+
+      // Submit code and get test results
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/submit_code/${questionId}/`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
           },
           body: JSON.stringify({ code, language }),
         }
       )
 
-      const data = await response.json()
-
       if (!response.ok) {
-        throw new Error(data.error || "Failed to execute code")
+        const errorData = await response.json().catch(() => ({ error: 'Failed to submit code' }))
+        throw new Error(errorData.error || 'Failed to submit code')
       }
 
-      if (data.results && data.summary) {
-        setResults(data)
-      } else {
-        setOutput(data.output || JSON.stringify(data, null, 2))
+      const data = await response.json()
+
+      // Set the results from the response
+      setResults({
+        results: data.results || [],
+        summary: {
+          total_cases: data.summary?.total_cases || 0,
+          passed_cases: data.summary?.passed_cases || 0
+        }
+      })
+
+      // Save the submission
+      const submissionResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/submissions/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify({ 
+            code, 
+            language, 
+            question: questionId,
+            passed: data.summary?.passed_cases === data.summary?.total_cases,
+            result_details: data
+          })
+        }
+      )
+
+      if (!submissionResponse.ok) {
+        const errorData = await submissionResponse.json().catch(() => ({ error: 'Failed to save submission' }))
+        throw new Error(errorData.error || 'Failed to save submission')
       }
     } catch (err: any) {
       setError(err?.message || "An unexpected error occurred")

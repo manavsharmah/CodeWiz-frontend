@@ -1,6 +1,7 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type React from "react"
+import { useRouter } from "next/navigation"
 
 import Link from "next/link"
 import { ArrowRight, Eye, EyeOff, Sparkles } from "lucide-react"
@@ -10,6 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { motion } from "framer-motion"
 import Navbar from "../components/Navbar"
 import { FadeIn } from "../components/scroll-animations"
+import { useAuth } from "@/contexts/AuthContext"
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -18,6 +20,18 @@ export default function LoginPage() {
     username: "",
     password: "",
   })
+  const [error, setError] = useState("")
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
+
+  const { login } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    setDimensions({
+      width: window.innerWidth,
+      height: window.innerHeight
+    })
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -27,27 +41,12 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-  
+
     try {
-      const res = await fetch("http://localhost:8000/api/auth/login/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include", // This keeps the session cookie
-        body: JSON.stringify({
-          username: formData.username, // we are logging in with username not email!
-          password: formData.password,
-        }),
-      })
-  
-      const data = await res.json()
-  
-      if (res.ok) {
-        window.location.href = "/"
-      } else {
-        alert(data.non_field_errors?.[0] || "Login failed")
-      }
+      await login(formData.username, formData.password)
+      window.location.href = "/" // redirect after login
     } catch (err) {
-      alert("Something went wrong")
+      alert((err as Error).message)
     } finally {
       setIsLoading(false)
     }
@@ -65,23 +64,22 @@ export default function LoginPage() {
           <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-[#F09319]/20 rounded-full filter blur-[120px]"></div>
 
           {/* Animated particles */}
-          {[...Array(15)].map((_, i) => (
+          {dimensions.width > 0 && Array.from({ length: 20 }).map((_, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, scale: 0 }}
+              className="absolute w-2 h-2 bg-white/20 rounded-full"
               animate={{
                 opacity: [0.1, 0.5, 0.1],
                 scale: [0.1, 1, 0.1],
-                x: [Math.random() * window.innerWidth, Math.random() * window.innerWidth],
-                y: [Math.random() * window.innerHeight, Math.random() * window.innerHeight],
+                x: [Math.random() * dimensions.width, Math.random() * dimensions.width],
+                y: [Math.random() * dimensions.height, Math.random() * dimensions.height],
               }}
               transition={{
-                repeat: Number.POSITIVE_INFINITY,
-                duration: 10 + Math.random() * 20,
-                ease: "linear",
+                duration: Math.random() * 5 + 5,
+                repeat: Infinity,
+                ease: "linear"
               }}
-              className="absolute w-1 h-1 rounded-full bg-[#8B5DFF]"
-            ></motion.div>
+            />
           ))}
         </div>
 
