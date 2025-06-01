@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Gamepad2, Brain, Trophy, Users, Code, ArrowRight, Sparkles, Zap } from "lucide-react"
 import Navbar from "./components/Navbar"
 import Hero3D from "./components/3d-hero"
-import Chatbot from "./components/Chatbot"
 import { FadeIn, ScaleIn, StaggerContainer, StaggerItem } from "./components/scroll-animations"
 import Link from "next/link"
 
@@ -442,9 +441,6 @@ export default function Home() {
               </div>
             </ScaleIn>
           </div>
-
-          {/* Chatbot */}
-          <Chatbot />
         </section>
       </main>
 
