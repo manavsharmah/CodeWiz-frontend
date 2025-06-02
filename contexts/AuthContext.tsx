@@ -38,7 +38,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const token = localStorage.getItem('accessToken')
     return {
       'Accept': 'application/json',
+      'Content-Type': 'application/json',
       ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    }
+  }
+
+  const refreshToken = async () => {
+    try {
+      const refreshToken = localStorage.getItem('refreshToken')
+      if (!refreshToken) {
+        throw new Error('No refresh token available')
+      }
+
+      const res = await fetch("http://localhost:8000/auth/token/refresh/", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify({ refresh: refreshToken }),
+        credentials: 'include'
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        localStorage.setItem('accessToken', data.access)
+        return true
+      }
+      return false
+    } catch (err) {
+      console.error("Token refresh error:", err)
+      return false
     }
   }
 
@@ -47,20 +77,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const res = await fetch("http://localhost:8000/api/auth/user/", {
         method: "GET",
         headers: getAuthHeader(),
+        credentials: 'include'
       })
+      
       if (res.ok) {
         const data = await res.json()
         setUser(data)
-      } else {
-        setUser(null)
-        localStorage.removeItem('accessToken')
-        localStorage.removeItem('refreshToken')
+        return true
+      } else if (res.status === 401) {
+        // Try to refresh token
+        const refreshSuccess = await refreshToken()
+        if (refreshSuccess) {
+          // Retry the request with new token
+          return getUser()
+        }
       }
+      
+      // If we get here, either refresh failed or other error
+      setUser(null)
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
+      return false
     } catch (err) {
       console.error("Failed to fetch user:", err)
       setUser(null)
       localStorage.removeItem('accessToken')
       localStorage.removeItem('refreshToken')
+      return false
     } finally {
       setIsLoading(false)
     }

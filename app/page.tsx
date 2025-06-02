@@ -7,15 +7,16 @@ import Navbar from "./components/Navbar"
 import Hero3D from "./components/3d-hero"
 import { FadeIn, ScaleIn, StaggerContainer, StaggerItem } from "./components/scroll-animations"
 import Link from "next/link"
+import AnimatedParticles from "./components/animated-particles"
 
 export default function Home() {
   // Initialize smooth scroll behavior
   useEffect(() => {
     // Add smooth scrolling to all internal links
     document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
-      anchor.addEventListener("click", function (e) {
+      anchor.addEventListener("click", (e: Event) => {
         e.preventDefault()
-        const href = this.getAttribute("href")
+        const href = (anchor as HTMLAnchorElement).getAttribute("href")
         if (!href) return
 
         document.querySelector(href)?.scrollIntoView({
@@ -360,20 +361,7 @@ export default function Home() {
           <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-gradient-to-t from-[#F09319]/10 to-transparent"></div>
 
           {/* Animated particles */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            {[...Array(20)].map((_, i) => (
-              <div
-                key={i}
-                className="absolute w-2 h-2 rounded-full bg-white/30"
-                style={{
-                  top: `${Math.random() * 100}%`,
-                  left: `${Math.random() * 100}%`,
-                  animation: `float ${5 + Math.random() * 10}s linear infinite`,
-                  opacity: Math.random() * 0.5 + 0.3,
-                }}
-              ></div>
-            ))}
-          </div>
+          <AnimatedParticles />
 
           <div className="container px-4 md:px-6 relative z-10">
             <ScaleIn>

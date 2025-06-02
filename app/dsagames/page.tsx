@@ -13,16 +13,11 @@ const DsaGamesPage = () => {
   const games = [
     { id: "1", name: "Two Sum Adventure", description: "Find pairs of numbers that add up to the target value" },
     { id: "2", name: "2D Matrix Explorer", description: "Navigate through a matrix to find the target" },
-    {
-      id: "3",
-      name: "Peak Element Finder",
-      description: "Find peak elements in a mountain array",
-    },
-    {
-      id: "4",
-      name: "Remove Duplicates",
-      description: "Clean up arrays by removing duplicate elements",
-    },
+    { id: "3", name: "Peak Element Finder", description: "Find peak elements in a mountain array" },
+    { id: "4", name: "Remove Duplicates", description: "Clean up arrays by removing duplicate elements" },
+    { id: "15", name: "Reverse Linked List", description: "Master the art of reversing linked lists" },
+    { id: "16", name: "Kth Largest Element", description: "Find the kth largest element in an array" },
+    { id: "17", name: "Next Greater Element", description: "Find the next greater element for each element in an array" }
   ]
 
   const handleGameSelect = (gameId: string) => {

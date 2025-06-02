@@ -156,8 +156,8 @@ const Navbar = () => {
           </motion.div>
 
           {/* Menu Links */}
-          <div className="hidden md:flex space-x-1 items-center">
-            {["Home", "Questions", "Sorting Visualizer"].map((item, index) => (
+          <div className="hidden md:flex items-center space-x-4">
+            {["Home", "Questions", "Sorting Visualizer", "Code Editor"].map((item, index) => (
               <motion.div key={item} variants={itemVariants}>
                 <Link
                   href={item === "Home" ? "/" : `/${item.toLowerCase().replace(" ", "-")}`}
@@ -379,6 +379,12 @@ const Navbar = () => {
                 className="block text-white hover:text-[#F09319] hover:bg-[#8B5DFF]/20 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
               >
                 Sorting Visualizer
+              </Link>
+              <Link
+                href="/code-editor"
+                className="block text-white hover:text-[#F09319] hover:bg-[#8B5DFF]/20 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+              >
+                Code Editor
               </Link>
 
               {/* Mobile Data Structure Visualizer Dropdown */}

@@ -71,7 +71,7 @@ const CodeEditorContainer: React.FC<CodeEditorContainerProps> = ({ questionId, s
 
       // Submit code and get test results
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/submit_code/${questionId}/`,
+        `http://localhost:8000/api/submit_code/${questionId}/`,
         {
           method: "POST",
           headers: {
@@ -100,7 +100,7 @@ const CodeEditorContainer: React.FC<CodeEditorContainerProps> = ({ questionId, s
 
       // Save the submission
       const submissionResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/submissions/`,
+        `http://localhost:8000/api/submissions/`,
         {
           method: "POST",
           headers: {

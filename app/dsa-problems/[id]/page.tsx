@@ -17,7 +17,7 @@ const DSAProblemsPage = () => {
     const fetchQuestionData = async () => {
       try {
         setLoading(true)
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/questions/${id}/`, {
+        const response = await fetch(`http://localhost:8000/api/questions/${id}/`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
           },

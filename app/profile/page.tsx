@@ -28,10 +28,23 @@ interface ProgressData {
   };
 }
 
+const defaultProgress: ProgressData = {
+  total_questions: 0,
+  solved_questions: 0,
+  attempted_questions: 0,
+  success_rate: 0,
+  recent_submissions: [],
+  difficulty_stats: {
+    easy: { solved: 0, total: 0 },
+    medium: { solved: 0, total: 0 },
+    hard: { solved: 0, total: 0 }
+  }
+};
+
 export default function ProfilePage() {
   const { user, isAuthenticated } = useAuth()
   const router = useRouter()
-  const [progress, setProgress] = useState<ProgressData | null>(null)
+  const [progress, setProgress] = useState<ProgressData>(defaultProgress)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -48,7 +61,7 @@ export default function ProfilePage() {
           throw new Error('No authentication token found')
         }
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/progress/`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/progress/`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -56,6 +69,12 @@ export default function ProfilePage() {
         })
 
         if (!response.ok) {
+          if (response.status === 404) {
+            // If progress endpoint is not found, use default progress
+            setProgress(defaultProgress)
+            setError(null)
+            return
+          }
           throw new Error(`Failed to fetch progress: ${response.statusText}`)
         }
 
@@ -63,8 +82,10 @@ export default function ProfilePage() {
         setProgress(data)
         setError(null)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch progress data')
         console.error('Error fetching progress:', err)
+        // Use default progress on error
+        setProgress(defaultProgress)
+        setError(err instanceof Error ? err.message : 'Failed to fetch progress data')
       } finally {
         setLoading(false)
       }
@@ -80,32 +101,15 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="container mx-auto p-4">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto p-4">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          <p>Error: {error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-2 text-sm underline hover:text-red-800"
-          >
-            Try again
-          </button>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
         </div>
       </div>
     )
   }
 
   const progressPercentage = progress
-    ? Math.round((progress.solved_questions / progress.total_questions) * 100)
+    ? Math.round((progress.solved_questions / progress.total_questions) * 100) || 0
     : 0
 
   return (
@@ -125,7 +129,7 @@ export default function ProfilePage() {
                 <div className="p-4 bg-gray-800/50 rounded-lg border border-purple-900/30">
                   <h3 className="text-lg font-semibold text-gray-300">Problems Solved</h3>
                   <p className="text-3xl font-bold text-[#8B5DFF]">
-                    {progress?.solved_questions || 0}
+                    {progress.solved_questions}
                   </p>
                 </div>
                 <div className="p-4 bg-gray-800/50 rounded-lg border border-purple-900/30">
@@ -137,7 +141,7 @@ export default function ProfilePage() {
                 <div className="p-4 bg-gray-800/50 rounded-lg border border-purple-900/30">
                   <h3 className="text-lg font-semibold text-gray-300">Points Earned</h3>
                   <p className="text-3xl font-bold text-green-400">
-                    {progress?.recent_submissions?.reduce((acc, submission) => acc + (submission.type === 'solved' ? 1 : 0), 0) || 0}
+                    {progress.recent_submissions.reduce((acc, submission) => acc + (submission.type === 'solved' ? 1 : 0), 0)}
                   </p>
                 </div>
               </div>
@@ -170,11 +174,11 @@ export default function ProfilePage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-gray-800/50 p-4 rounded-lg border border-purple-900/30">
                         <p className="text-sm text-gray-300">Total Questions</p>
-                        <p className="text-2xl font-bold text-[#8B5DFF]">{progress?.total_questions || 0}</p>
+                        <p className="text-2xl font-bold text-[#8B5DFF]">{progress.total_questions}</p>
                       </div>
                       <div className="bg-gray-800/50 p-4 rounded-lg border border-purple-900/30">
                         <p className="text-sm text-gray-300">Solved Questions</p>
-                        <p className="text-2xl font-bold text-[#F09319]">{progress?.solved_questions || 0}</p>
+                        <p className="text-2xl font-bold text-[#F09319]">{progress.solved_questions}</p>
                       </div>
                     </div>
                   </div>
@@ -192,21 +196,24 @@ export default function ProfilePage() {
                 <CardContent>
                   <ScrollArea className="h-[400px]">
                     <div className="space-y-4">
-                      {progress?.recent_submissions.map((submission, index) => (
-                        <div key={index} className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-purple-900/30">
-                          <div>
-                            <p className="font-medium text-gray-200">{submission.problem}</p>
-                            <p className="text-sm text-gray-400">
-                              {new Date(submission.date).toLocaleDateString()}
-                            </p>
+                      {progress.recent_submissions.length > 0 ? (
+                        progress.recent_submissions.map((submission, index) => (
+                          <div key={index} className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-purple-900/30">
+                            <div>
+                              <p className="font-medium text-gray-200">{submission.problem}</p>
+                              <p className="text-sm text-gray-400">
+                                {new Date(submission.date).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <Badge variant={submission.type === 'solved' ? 'success' : 'secondary'}>
+                              {submission.type}
+                            </Badge>
                           </div>
-                          <Badge variant={submission.type === 'solved' ? 'success' : 'warning'} className="ml-2">
-                            {submission.type}
-                          </Badge>
+                        ))
+                      ) : (
+                        <div className="text-center text-gray-400 py-8">
+                          No recent activity
                         </div>
-                      ))}
-                      {(!progress?.recent_submissions || progress.recent_submissions.length === 0) && (
-                        <p className="text-center text-gray-500 py-4">No recent activity</p>
                       )}
                     </div>
                   </ScrollArea>

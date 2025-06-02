@@ -34,6 +34,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu"
 import { useFileSystem, type Project, type FileSystemFile, type FileSystemFolder } from "@/hooks/use-file-system"
+import { projectApi } from "@/lib/api"
 
 interface FileExplorerProps {
   projects: Project[]
@@ -57,6 +58,8 @@ export default function FileExplorer({
   const [showNewItemDialog, setShowNewItemDialog] = useState(false)
   const [showRenameDialog, setShowRenameDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showNewProjectDialog, setShowNewProjectDialog] = useState(false)
+  const [newProjectName, setNewProjectName] = useState("")
   const [newItemType, setNewItemType] = useState<"file" | "folder">("file")
   const [newItemName, setNewItemName] = useState("")
   const [currentItemId, setCurrentItemId] = useState<string | null>(null)
@@ -79,6 +82,10 @@ export default function FileExplorer({
 
   const handleCreateItem = () => {
     if (newItemName.trim() === "") return
+    if (!currentProject) {
+      alert("Please select a project first")
+      return
+    }
     createFile(currentItemId, newItemName, newItemType)
     setShowNewItemDialog(false)
   }
@@ -124,6 +131,7 @@ export default function FileExplorer({
   }
 
   const renderFileTree = (items: (FileSystemFile | FileSystemFolder)[], level = 0) => {
+    if (!items) return null
     return items
       .filter((item) => {
         if (!searchQuery) return true
@@ -217,6 +225,20 @@ export default function FileExplorer({
       })
   }
 
+  const handleCreateProject = () => {
+    if (newProjectName.trim() === "") return
+    projectApi.create({ name: newProjectName })
+      .then((project) => {
+        setCurrentProject(project)
+        setShowNewProjectDialog(false)
+        setNewProjectName("")
+      })
+      .catch((error) => {
+        console.error("Error creating project:", error)
+        alert("Failed to create project")
+      })
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Project Selector */}
@@ -241,6 +263,10 @@ export default function FileExplorer({
                 {project.name}
               </DropdownMenuItem>
             ))}
+            <DropdownMenuItem onClick={() => setShowNewProjectDialog(true)} className="text-[#8B5DFF]">
+              <FolderPlus className="h-4 w-4 mr-2" />
+              Create New Project
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -286,7 +312,7 @@ export default function FileExplorer({
         <ContextMenu>
           <ContextMenuTrigger className="min-h-full">
             <div className="min-h-full" onContextMenu={(e) => handleContextMenu(e, "root", "root")}>
-              {currentProject && renderFileTree(currentProject.files)}
+              {currentProject?.files && renderFileTree(currentProject.files)}
             </div>
           </ContextMenuTrigger>
           <ContextMenuContent className="w-64">
@@ -376,6 +402,37 @@ export default function FileExplorer({
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
               Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Project Dialog */}
+      <Dialog open={showNewProjectDialog} onOpenChange={setShowNewProjectDialog}>
+        <DialogContent className="bg-gray-900 border-gray-700 text-white">
+          <DialogHeader>
+            <DialogTitle>Create New Project</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Enter a name for your new project.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            placeholder="Project name"
+            className="bg-gray-800 border-gray-700 text-white"
+            value={newProjectName}
+            onChange={(e) => setNewProjectName(e.target.value)}
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewProjectDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-gradient-to-r from-[#8B5DFF] to-[#F09319]"
+              onClick={handleCreateProject}
+              disabled={!newProjectName.trim()}
+            >
+              Create
             </Button>
           </DialogFooter>
         </DialogContent>

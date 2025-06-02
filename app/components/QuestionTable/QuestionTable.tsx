@@ -7,29 +7,38 @@ import { GameButton } from "./GameButton"
 import { SolveButton } from "./SolveButton"
 import { motion } from "framer-motion"
 
+const AVAILABLE_GAMES = ['1', '2', '3', '4', '15', '16', '17']
+
 const QuestionTable: React.FC = () => {
-  const [data, setData] = useState<Array<{ id: number; title: string; status: string }>>([])
+  const [data, setData] = useState<Array<{ id: number; title: string; status: string; difficulty: string }>>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
+
+  const hasGame = (id: number): boolean => {
+    return AVAILABLE_GAMES.includes(id.toString())
+  }
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
       setError(null)
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/questions/`, {
+        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+        const response = await fetch(`${baseUrl}/api/questions/`, {
           method: "GET",
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+            'Content-Type': 'application/json',
           },
         })
 
         if (!response.ok) {
-          throw new Error("Failed to fetch question data")
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || `Failed to fetch question data: ${response.status}`);
         }
 
         const result = await response.json()
-        setData(result)
+        setData(result.sort((a: { id: number }, b: { id: number }) => a.id - b.id))
       } catch (error: any) {
         console.error("Error fetching data:", error.message)
         setError("Failed to load questions. Please try again later.")
@@ -43,6 +52,10 @@ const QuestionTable: React.FC = () => {
 
   const handleSolveClick = (id: number) => {
     window.location.href = `/dsa-problems/${id}`
+  }
+
+  const handleGameClick = (id: number) => {
+    window.location.href = `/dsagames/${id}`
   }
 
   return (
@@ -97,6 +110,19 @@ const QuestionTable: React.FC = () => {
                 </TableCell>
                 <TableCell className="py-4">
                   <span
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      item.difficulty.toLowerCase() === 'easy'
+                        ? "bg-green-900/30 text-green-400 border border-green-700/30"
+                        : item.difficulty.toLowerCase() === 'medium'
+                          ? "bg-yellow-900/30 text-yellow-400 border border-yellow-700/30"
+                          : "bg-red-900/30 text-red-400 border border-red-700/30"
+                    }`}
+                  >
+                    {item.difficulty}
+                  </span>
+                </TableCell>
+                <TableCell className="py-4">
+                  <span
                     className={`px-2 py-1 rounded-full text-xs font-medium ${
                       item.status === "solved"
                         ? "bg-green-500/20 text-green-400"
@@ -109,7 +135,9 @@ const QuestionTable: React.FC = () => {
                 <TableCell className="py-4">
                   <div className="flex space-x-2">
                     <SolveButton onClick={() => handleSolveClick(item.id)} />
-                    <GameButton gameId={item.id} onClick={() => handleSolveClick(item.id)} />
+                    {hasGame(item.id) && (
+                      <GameButton gameId={item.id} onClick={() => handleGameClick(item.id)} />
+                    )}
                   </div>
                 </TableCell>
               </motion.tr>
