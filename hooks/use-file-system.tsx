@@ -54,16 +54,30 @@ export function useFileSystem() {
       }))
       setProjects(projects)
 
-      // If there are projects, set the first one as current
+      // Get the last selected project ID from localStorage
+      const lastSelectedProjectId = localStorage.getItem('selectedProjectId')
+
+      // If there are projects, set the current project
       if (projects.length > 0) {
-        const currentProject = projects[0]
-        setCurrentProject(currentProject)
+        let selectedProject: Project | null = null
+
+        // If there's a last selected project ID, try to find that project
+        if (lastSelectedProjectId) {
+          selectedProject = projects.find(p => p.id === lastSelectedProjectId) || null
+        }
+
+        // If no last selected project or it wasn't found, use the first project
+        if (!selectedProject) {
+          selectedProject = projects[0]
+        }
+
+        setCurrentProject(selectedProject)
 
         // Then load files for the current project
-        const filesResponse = await fileSystemApi.getByProject(currentProject.id)
+        const filesResponse = await fileSystemApi.getByProject(selectedProject.id)
         const projectData = filesResponse.data
         const updatedProject = {
-          ...currentProject,
+          ...selectedProject,
           files: projectData.map(item => {
             if (item.item_type === 'file') {
               return {
@@ -95,6 +109,100 @@ export function useFileSystem() {
       console.error("Failed to load projects:", error)
     }
   }
+
+  // Update setCurrentProject to also save to localStorage and load project files
+  const handleSetCurrentProject = async (project: Project | null) => {
+    if (project) {
+      try {
+        // Load files for the selected project
+        const filesResponse = await fileSystemApi.getByProject(project.id);
+        const projectData = filesResponse.data;
+
+        // First, create a map of all items by their ID
+        const itemsMap = new Map();
+        projectData.forEach(item => {
+          if (item.item_type === 'file') {
+            itemsMap.set(item.id, {
+              id: item.id,
+              name: item.name,
+              type: 'file' as const,
+              content: item.content || '',
+              language: getLanguageFromExtension(item.name),
+              parent: item.parent || null,
+              project: item.project
+            } as FileSystemFile);
+          } else {
+            itemsMap.set(item.id, {
+              id: item.id,
+              name: item.name,
+              type: 'folder' as const,
+              expanded: false,
+              children: [],
+              parent: item.parent || null,
+              project: item.project
+            } as FileSystemFolder);
+          }
+        });
+
+        // Build the tree structure
+        const rootItems: (FileSystemFile | FileSystemFolder)[] = [];
+        projectData.forEach(item => {
+          const currentItem = itemsMap.get(item.id);
+          if (!currentItem) return;
+
+          if (item.parent) {
+            // Add to parent's children
+            const parent = itemsMap.get(item.parent);
+            if (parent && parent.type === 'folder') {
+              parent.children.push(currentItem);
+            }
+          } else {
+            // Add to root level
+            rootItems.push(currentItem);
+          }
+        });
+
+        // Sort items at each level
+        const sortItems = (items: (FileSystemFile | FileSystemFolder)[]) => {
+          items.sort((a, b) => {
+            // Folders first, then files
+            if (a.type !== b.type) {
+              return a.type === 'folder' ? -1 : 1;
+            }
+            // Then alphabetically by name
+            return a.name.localeCompare(b.name);
+          });
+
+          // Recursively sort children
+          items.forEach(item => {
+            if (item.type === 'folder') {
+              sortItems(item.children);
+            }
+          });
+        };
+
+        // Sort the root items and their children
+        sortItems(rootItems);
+
+        const updatedProject = {
+          ...project,
+          files: rootItems
+        };
+
+        setCurrentProject(updatedProject);
+        setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
+        localStorage.setItem('selectedProjectId', project.id);
+      } catch (error) {
+        console.error("Failed to load project files:", error);
+        // Still set the project even if file loading fails
+        setCurrentProject(project);
+        localStorage.setItem('selectedProjectId', project.id);
+      }
+    } else {
+      setCurrentProject(null);
+      localStorage.removeItem('selectedProjectId');
+    }
+  };
 
   const openFile = (fileId: string) => {
     const file = findFile(currentProject?.files || [], fileId)
@@ -207,6 +315,91 @@ export function useFileSystem() {
     }
   }
 
+  const refreshCurrentProject = async () => {
+    if (!currentProject) return;
+    
+    try {
+      const filesResponse = await fileSystemApi.getByProject(currentProject.id);
+      const projectData = filesResponse.data;
+
+      // First, create a map of all items by their ID
+      const itemsMap = new Map();
+      projectData.forEach(item => {
+        if (item.item_type === 'file') {
+          itemsMap.set(item.id, {
+            id: item.id,
+            name: item.name,
+            type: 'file' as const,
+            content: item.content || '',
+            language: getLanguageFromExtension(item.name),
+            parent: item.parent || null,
+            project: item.project
+          } as FileSystemFile);
+        } else {
+          itemsMap.set(item.id, {
+            id: item.id,
+            name: item.name,
+            type: 'folder' as const,
+            expanded: false,
+            children: [],
+            parent: item.parent || null,
+            project: item.project
+          } as FileSystemFolder);
+        }
+      });
+
+      // Build the tree structure
+      const rootItems: (FileSystemFile | FileSystemFolder)[] = [];
+      projectData.forEach(item => {
+        const currentItem = itemsMap.get(item.id);
+        if (!currentItem) return;
+
+        if (item.parent) {
+          // Add to parent's children
+          const parent = itemsMap.get(item.parent);
+          if (parent && parent.type === 'folder') {
+            parent.children.push(currentItem);
+          }
+        } else {
+          // Add to root level
+          rootItems.push(currentItem);
+        }
+      });
+
+      // Sort items at each level
+      const sortItems = (items: (FileSystemFile | FileSystemFolder)[]) => {
+        items.sort((a, b) => {
+          // Folders first, then files
+          if (a.type !== b.type) {
+            return a.type === 'folder' ? -1 : 1;
+          }
+          // Then alphabetically by name
+          return a.name.localeCompare(b.name);
+        });
+
+        // Recursively sort children
+        items.forEach(item => {
+          if (item.type === 'folder') {
+            sortItems(item.children);
+          }
+        });
+      };
+
+      // Sort the root items and their children
+      sortItems(rootItems);
+
+      const updatedProject = {
+        ...currentProject,
+        files: rootItems
+      };
+
+      setCurrentProject(updatedProject);
+      setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
+    } catch (error) {
+      console.error("Failed to refresh project:", error);
+    }
+  };
+
   const createFile = async (parentId: string | null, name: string, type: "file" | "folder") => {
     try {
       if (!currentProject) {
@@ -219,6 +412,10 @@ export function useFileSystem() {
         throw new Error('Parent folder not found');
       }
       
+      if (parentId && parentFolder?.type !== 'folder') {
+        throw new Error('Parent must be a folder');
+      }
+      
       const siblings = parentFolder?.type === 'folder' ? parentFolder.children : currentProject.files;
       
       if (siblings) {
@@ -228,15 +425,33 @@ export function useFileSystem() {
         }
       }
 
+      // Validate file extension based on project's main language
+      if (type === 'file') {
+        const fileExtension = name.includes('.') ? '.' + name.split('.').pop()?.toLowerCase() : '';
+        const allowedExtensions: Record<string, string[]> = {
+          'python': ['.py'],
+          'javascript': ['.js'],
+          'cpp': ['.cpp', '.hpp', '.h']
+        };
+
+        const projectLanguage = currentProject.main_language.toLowerCase();
+        if (projectLanguage in allowedExtensions) {
+          if (!fileExtension) {
+            // If no extension is provided, add the default extension for the project's language
+            name = name + allowedExtensions[projectLanguage][0];
+          } else if (!allowedExtensions[projectLanguage].includes(fileExtension)) {
+            throw new Error(`Only ${projectLanguage} files (${allowedExtensions[projectLanguage].join(', ')}) are allowed in this project`);
+          }
+        }
+      }
+
       const requestData = {
         name: name.trim(),
         item_type: type,
-        content: type === "file" ? "" : undefined,
+        content: type === 'file' ? '' : undefined,
         parent_id: parentId,
         project_id: currentProject.id
       };
-
-      console.log('Creating file/folder with data:', requestData);
 
       // Make API request
       const response = await fileSystemApi.create(requestData);
@@ -245,170 +460,42 @@ export function useFileSystem() {
         throw new Error('No data received from server');
       }
 
-      // Update state with new item
-      const newItem = response.data;
-      console.log('Received new item from server:', newItem);
+      // Refresh the current project to get the updated file structure
+      await refreshCurrentProject();
 
-      const transformedItem = newItem.item_type === 'file' 
-        ? {
-            id: newItem.id,
-            name: newItem.name,
-            type: 'file' as const,
-            content: newItem.content || '',
-            language: getLanguageFromExtension(newItem.name),
-            parent: newItem.parent || null,
-            project: newItem.project
-          } as FileSystemFile
-        : {
-            id: newItem.id,
-            name: newItem.name,
-            type: 'folder' as const,
-            expanded: false,
-            children: [],
-            parent: newItem.parent || null,
-            project: newItem.project
-          } as FileSystemFolder;
-
-      // If we have a parent folder, make sure it's expanded
-      if (parentId && parentFolder?.type === 'folder') {
-        const updatedFiles = toggleFolderInTree(currentProject.files, parentId);
-        const filesWithNewItem = addItemToTree(updatedFiles, transformedItem, parentId);
-        setCurrentProject({ ...currentProject, files: filesWithNewItem });
-        setProjects((prev) =>
-          prev.map((p) => (p.id === currentProject.id ? { ...p, files: filesWithNewItem } : p))
-        );
-      } else {
-        const updatedFiles = addItemToTree(currentProject.files, transformedItem, parentId);
-        setCurrentProject({ ...currentProject, files: updatedFiles });
-        setProjects((prev) =>
-          prev.map((p) => (p.id === currentProject.id ? { ...p, files: updatedFiles } : p))
-        );
-      }
-
-      return response.data;
     } catch (error: any) {
-      // Detailed error logging
-      console.error('Failed to create item:', {
-        error: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        requestData: {
-          name,
-          type,
-          parentId,
-          projectId: currentProject?.id
-        }
-      });
-
-      // Handle specific error cases
-      if (error.response) {
-        const errorData = error.response.data;
-        const errorMessage = errorData?.detail || errorData?.non_field_errors?.[0] || errorData?.message || error.message;
-        
-        switch (error.response.status) {
-          case 400:
-            if (errorMessage?.includes('already exists')) {
-              throw new Error(`A file or folder with the name "${name}" already exists in this location`);
-            }
-            throw new Error(`Invalid request: ${errorMessage || 'Please check your input'}`);
-          case 401:
-            throw new Error('You are not authorized. Please log in again.');
-          case 403:
-            throw new Error('You do not have permission to create files in this project.');
-          case 404:
-            throw new Error('Project not found. Please try selecting the project again.');
-          case 500:
-            throw new Error('Server error. Please try again later.');
-          default:
-            throw new Error(`Failed to create item: ${errorMessage}`);
-        }
-      }
-
-      // Handle network errors
-      if (error.message === 'Network Error') {
-        throw new Error('Network error. Please check your internet connection.');
-      }
-
-      // Handle other errors
-      throw new Error(`Failed to create item: ${error.message}`);
+      console.error("Failed to create file/folder:", error);
+      throw new Error(error.response?.data?.detail || error.message || "Failed to create file/folder");
     }
   };
 
   const deleteItem = async (itemId: string) => {
     try {
-      if (!itemId || typeof itemId !== 'string' || itemId.trim() === '') {
-        throw new Error('Invalid item ID');
-      }
-
       if (!currentProject) {
         throw new Error('No project selected');
       }
 
-      // Check if the item exists in the current project
-      const item = findFile(currentProject.files, itemId);
-      if (!item) {
-        throw new Error('Item not found in the current project');
-      }
-
       await fileSystemApi.delete(itemId);
-      
-      const updatedFiles = removeItemFromTree(currentProject.files, itemId);
-      setCurrentProject({ ...currentProject, files: updatedFiles });
-      setProjects((prev) =>
-        prev.map((p) => (p.id === currentProject.id ? { ...p, files: updatedFiles } : p))
-      );
-      closeFile(itemId);
+      await refreshCurrentProject();
     } catch (error: any) {
       console.error("Failed to delete item:", error);
-      
-      // Handle specific error cases
-      if (error.response) {
-        const errorData = error.response.data;
-        const errorMessage = errorData?.detail || errorData?.non_field_errors?.[0] || errorData?.message || error.message;
-        
-        switch (error.response.status) {
-          case 400:
-            throw new Error(`Invalid request: ${errorMessage || 'Please check your input'}`);
-          case 401:
-            throw new Error('You are not authorized. Please log in again.');
-          case 403:
-            throw new Error('You do not have permission to delete this item.');
-          case 404:
-            throw new Error('Item not found. It may have been deleted already.');
-          case 500:
-            throw new Error('Server error. Please try again later.');
-          default:
-            throw new Error(`Failed to delete item: ${errorMessage}`);
-        }
-      }
-
-      // Handle network errors
-      if (error.message === 'Network Error') {
-        throw new Error('Network error. Please check your internet connection.');
-      }
-
-      // Handle other errors
-      throw new Error(error.message || 'Failed to delete item');
+      throw new Error(error.message || "Failed to delete item");
     }
   };
 
   const renameItem = async (itemId: string, newName: string) => {
     try {
-      await fileSystemApi.update(itemId, { name: newName })
-      if (currentProject) {
-        const updatedFiles = renameItemInTree(currentProject.files, itemId, newName)
-        setCurrentProject({ ...currentProject, files: updatedFiles })
-        setProjects((prev) =>
-          prev.map((p) => (p.id === currentProject.id ? { ...p, files: updatedFiles } : p))
-        )
-        setOpenFiles((prev) =>
-          prev.map((f) => (f.id === itemId ? { ...f, name: newName } : f))
-        )
+      if (!currentProject) {
+        throw new Error('No project selected');
       }
-    } catch (error) {
-      console.error("Failed to rename item:", error)
+
+      await fileSystemApi.update(itemId, { name: newName });
+      await refreshCurrentProject();
+    } catch (error: any) {
+      console.error("Failed to rename item:", error);
+      throw new Error(error.message || "Failed to rename item");
     }
-  }
+  };
 
   const toggleFolder = (folderId: string) => {
     if (currentProject) {
@@ -513,7 +600,7 @@ export function useFileSystem() {
   return {
     projects,
     currentProject,
-    setCurrentProject,
+    setCurrentProject: handleSetCurrentProject,
     openFiles,
     activeFileId,
     setActiveFileId,
@@ -525,5 +612,6 @@ export function useFileSystem() {
     deleteItem,
     renameItem,
     toggleFolder,
+    loadProjects,
   }
 }

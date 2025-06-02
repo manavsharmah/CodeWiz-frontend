@@ -3,19 +3,33 @@
 import { useState } from 'react'
 import { Project } from '@/hooks/use-file-system'
 import { projectApi } from '@/lib/api'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Trash2 } from 'lucide-react'
 
 interface ProjectSelectorProps {
   projects: Project[]
   currentProject: Project | null
   onProjectSelect: (project: Project) => void
+  onProjectDelete?: () => void
 }
 
 export function ProjectSelector({
   projects,
   currentProject,
   onProjectSelect,
+  onProjectDelete,
 }: ProjectSelectorProps) {
   const [isCreating, setIsCreating] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null)
   const [newProjectName, setNewProjectName] = useState('')
   const [newProjectLanguage, setNewProjectLanguage] = useState('python')
 
@@ -43,6 +57,40 @@ export function ProjectSelector({
     }
   }
 
+  const handleDeleteClick = (project: Project) => {
+    setProjectToDelete(project)
+    setShowDeleteDialog(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!projectToDelete) return
+
+    const projectId = projectToDelete.id // Store the ID before any state changes
+    
+    try {
+      await projectApi.delete(projectId)
+      
+      // If the deleted project was the current project, select the first available project
+      if (currentProject?.id === projectId) {
+        const remainingProjects = projects.filter(p => p.id !== projectId)
+        if (remainingProjects.length > 0) {
+          onProjectSelect(remainingProjects[0])
+        }
+      }
+
+      // Call onProjectDelete after successful deletion
+      if (onProjectDelete) {
+        onProjectDelete()
+      }
+    } catch (error) {
+      console.error('Failed to delete project:', error)
+      // You might want to show an error message to the user here
+    } finally {
+      setShowDeleteDialog(false)
+      setProjectToDelete(null)
+    }
+  }
+
   return (
     <div className="flex items-center space-x-4">
       <select
@@ -57,6 +105,18 @@ export function ProjectSelector({
           </option>
         ))}
       </select>
+
+      {currentProject && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+          onClick={() => handleDeleteClick(currentProject)}
+          title="Delete Project"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      )}
 
       {isCreating ? (
         <div className="flex items-center space-x-2">
@@ -76,31 +136,50 @@ export function ProjectSelector({
             <option key="javascript" value="javascript">JavaScript</option>
             <option key="typescript" value="typescript">TypeScript</option>
           </select>
-          <button
+          <Button
             onClick={handleCreateProject}
-            className="rounded bg-blue-500 px-2 py-1 text-white hover:bg-blue-600"
+            className="bg-blue-500 hover:bg-blue-600"
           >
             Create
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="outline"
             onClick={() => {
               setIsCreating(false)
               setNewProjectName('')
               setNewProjectLanguage('python')
             }}
-            className="rounded bg-gray-700 px-2 py-1 text-white hover:bg-gray-600"
           >
             Cancel
-          </button>
+          </Button>
         </div>
       ) : (
-        <button
+        <Button
           onClick={() => setIsCreating(true)}
-          className="rounded bg-blue-500 px-2 py-1 text-white hover:bg-blue-600"
+          className="bg-blue-500 hover:bg-blue-600"
         >
           New Project
-        </button>
+        </Button>
       )}
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="bg-gray-900 border-gray-700 text-white">
+          <DialogHeader>
+            <DialogTitle>Delete Project</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Are you sure you want to delete "{projectToDelete?.name}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 

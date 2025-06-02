@@ -23,6 +23,7 @@ export default function IDEContainer() {
     deleteItem,
     renameItem,
     toggleFolder,
+    loadProjects,
   } = useFileSystem()
 
   const [output, setOutput] = useState<string>('')
@@ -44,6 +45,13 @@ export default function IDEContainer() {
     }
   }
 
+  const handleProjectDelete = async () => {
+    // Close all open files
+    openFiles.forEach(file => closeFile(file.id))
+    // Refresh the project list
+    await loadProjects()
+  }
+
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col bg-[#1e1e1e]">
       <div className="flex h-12 items-center border-b border-gray-700 bg-[#252526] px-4">
@@ -51,6 +59,7 @@ export default function IDEContainer() {
           projects={projects}
           currentProject={currentProject}
           onProjectSelect={setCurrentProject}
+          onProjectDelete={handleProjectDelete}
         />
       </div>
       <div className="flex flex-1 overflow-hidden">
